@@ -72,16 +72,15 @@ def parse_parameters(url, func, parameters_count, starting_string, end_string):
     return tuple(map(tuple, parameters_array))
 
 
-def draw_plot(x_vals, y_vals, x_axis_label, y_axis_label, label):
-    fig, ax = plt.subplots(figsize=(6, 6))
+def draw_plot(x_vals, y_vals, x_axis_label, y_axis_label, label, ax):
     ax.set_xlabel(x_axis_label)
     ax.set_ylabel(y_axis_label)
 
     ax.scatter(x_vals, y_vals, color='blue', s=4, label='Surowe dane')
     ax.plot(x_vals, moving_average(5, y_vals), color='red', alpha=1, label='Średnia z 5 dni')
-    plt.axvline(x=np.datetime64('2020-11-04', 'D'), label='Konferencja ws lockdownu', c='black', linestyle=':')
-    plt.axvline(x=np.datetime64('2020-07-01', 'D'), label='Koronawirus "w odwrocie"', c='orange', linestyle=':')
-    plt.legend(bbox_to_anchor=(0., -0.4, 1., 0.), loc='lower left')
+    ax.axvline(x=np.datetime64('2020-11-04', 'D'), label='Konferencja ws lockdownu', c='black', linestyle=':')
+    ax.axvline(x=np.datetime64('2020-07-01', 'D'), label='Koronawirus "w odwrocie"', c='orange', linestyle=':')
+
 
     # format the ticks
     ax.xaxis.set_major_locator(dates.MonthLocator())
@@ -95,9 +94,7 @@ def draw_plot(x_vals, y_vals, x_axis_label, y_axis_label, label):
     datemin = np.datetime64(x_vals[0], 'D')
     datemax = np.datetime64(x_vals[-1], 'D') + np.timedelta64(3, 'D')
     ax.set_xlim(datemin, datemax)
-    fig.autofmt_xdate()
-    fig.suptitle(label)
-    plt.subplots_adjust(None, 0.27)
+    ax.set_title(label)
 
 
 def moving_average(step, arr):
@@ -122,12 +119,13 @@ skip, datas_tests, ratios, ratios_tested_people, tests_array, new_cases \
 skip, datas_deaths, dr_ratios, deaths_daily \
     = parse_parameters("https://koronawirusunas.pl/u/polska-nowe", get_deaths_recovered_values, 4, 'var populationData = [', 'var startData = ')
 
-
-draw_plot(datas_tests, ratios, 'Data', 'Udział wyników pozytywnych [%]', 'Stosunek testów pozytywnych do wszystkich testów')
-draw_plot(datas_tests, tests_array, 'Data', 'Liczba testów', 'Liczba dziennie wykonanych testów')
-draw_plot(datas_tests, new_cases, 'Data', 'Liczba zakażeń', 'Liczba dziennie wykrytych zakażeń')
-draw_plot(datas_deaths, dr_ratios, 'Data', 'Liczba zmarłych / liczba wyleczonych', 'Stosunek liczby zmarłych do wyleczonych - dziennie')
-draw_plot(datas_deaths, deaths_daily, 'Data', 'Liczba zgonów', 'Liczba zgonów - dziennie')
+figs, axs = plt.subplots(2, 3)
+draw_plot(datas_tests, ratios, 'Data', 'Udział wyników pozytywnych [%]', 'Stosunek testów pozytywnych do wszystkich testów', axs[0, 0])
+draw_plot(datas_tests, tests_array, 'Data', 'Liczba testów', 'Liczba dziennie wykonanych testów', axs[0, 1])
+draw_plot(datas_tests, new_cases, 'Data', 'Liczba zakażeń', 'Liczba dziennie wykrytych zakażeń', axs[0, 2])
+draw_plot(datas_deaths, dr_ratios, 'Data', 'Liczba zmarłych / liczba wyleczonych', 'Stosunek liczby zmarłych do wyleczonych - dziennie', axs[1, 0])
+draw_plot(datas_deaths, deaths_daily, 'Data', 'Liczba zgonów', 'Liczba zgonów - dziennie', axs[1, 1])
+figs.autofmt_xdate()
 
 print('_________________________________')
 print('Dane z', datas_tests[-1])
@@ -136,5 +134,18 @@ print('Liczba zakażeń:', new_cases[-1])
 print('Liczba zgonów:', deaths_daily[-1])
 print('Stosunek wyników pozytywnych:', ratios[-1])
 print('Stosunek zgonów do wyzdrowień:', dr_ratios[-1])
+# figManager = plt.get_current_fig_manager()
+# figManager.full_screen_toggle()
+for i, ax in enumerate(axs):
+    if i>0:
+        handles, labels = ax.get_legend_handles_labels()
+        handles= []
+        labels=[]
 
+# handles, labels = axs.get_legend_handles_labels()
+print(handles)
+by_label = dict(zip(labels, handles))
+figs.legend(by_label.values(), by_label.keys())
+# plt.legend(bbox_to_anchor=(0., -0.4, 1., 0.), loc='lower left')
 plt.show()
+
