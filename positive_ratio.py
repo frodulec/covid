@@ -50,30 +50,26 @@ def get_deaths_recovered_values(text):
     return text[text.find('},') + len('},'):], np.datetime64(data, 'D'), death_recovered_ratio, deaths
 
 
-def parse_parameters(url, func, parameters, starting_string, end_string):
-    # url = "https://koronawirusunas.pl/u/polska-testy-nowe"
+def parse_parameters(url, func, parameters_count, starting_string, end_string):
+    parameters_array = []
+    for i in range(parameters_count):
+        parameters_array.append([])
+
     response = requests.get(url, timeout=10000)
     text = response.text.replace('null', '0')
-    # begin = text.find('var Data_przyrost_testy = [') + len('var Data_przyrost_testy = [')
-    begin = text.find(starting_string + len(starting_string))
-    # end = text.find('var TstartData = ')
+    begin = text.find(starting_string) + len(starting_string)
     end = text.find(end_string)
-
-    # text, d, r, r_tested_people, tests, positive = get_tests_values(text[begin:end])
     ret_data = func(text[begin:end])
-    parameters_arrays = [[]] * len(parameters)
-    for i in range(len(parameters)):
-        parameters_arrays[i].append(ret_data[i])
-    #
-    # ratios = [r]
-    # datas = [d]
-    # tests_array = [tests]
-    # new_cases = [positive]
 
-    while 'arg' in text:
-        ret_data = get_tests_values(text)
-        for i in range(len(parameters)):
-            parameters_arrays[i].append(ret_data[i])
+    for i in range(parameters_count):
+        parameters_array[i].append(ret_data[i])
+
+    while 'arg' in ret_data[0]:
+        ret_data = func(ret_data[0])
+        for i in range(parameters_count):
+            parameters_array[i].append(ret_data[i])
+
+    return tuple(map(tuple, parameters_array))
 
 
 def draw_plot(x_vals, y_vals, x_axis_label, y_axis_label, label):
@@ -81,7 +77,6 @@ def draw_plot(x_vals, y_vals, x_axis_label, y_axis_label, label):
     ax.set_xlabel(x_axis_label)
     ax.set_ylabel(y_axis_label)
 
-    # data = [datas, ratios]
     ax.scatter(x_vals, y_vals, color='blue', s=4, label='Surowe dane')
     ax.plot(x_vals, moving_average(5, y_vals), color='red', alpha=1, label='Średnia z 5 dni')
     plt.axvline(x=np.datetime64('2020-11-04', 'D'), label='Konferencja ws lockdownu', c='black', linestyle=':')
@@ -97,8 +92,8 @@ def draw_plot(x_vals, y_vals, x_axis_label, y_axis_label, label):
     ax.xaxis.set_minor_formatter(dates.DateFormatter('%b'))
 
     # round to nearest years.
-    datemin = np.datetime64(datas[0], 'D')
-    datemax = np.datetime64(datas[-1], 'D') + np.timedelta64(3, 'D')
+    datemin = np.datetime64(x_vals[0], 'D')
+    datemax = np.datetime64(x_vals[-1], 'D') + np.timedelta64(3, 'D')
     ax.set_xlim(datemin, datemax)
     fig.autofmt_xdate()
     fig.suptitle(label)
@@ -122,54 +117,23 @@ years = mdates.YearLocator()  # every year
 months = mdates.MonthLocator()  # every month
 months_fmt = mdates.DateFormatter('%M')
 
-url = "https://koronawirusunas.pl/u/polska-testy-nowe"
-response = requests.get(url, timeout=10000)
-text = response.text.replace('null', '0')
-begin = text.find('var Data_przyrost_testy = [') + len('var Data_przyrost_testy = [')
-end = text.find('var TstartData = ')
+skip, datas_tests, ratios, ratios_tested_people, tests_array, new_cases \
+    = parse_parameters("https://koronawirusunas.pl/u/polska-testy-nowe", get_tests_values, 6, 'var Data_przyrost_testy = [', 'var TstartData = ')
+skip, datas_deaths, dr_ratios, deaths_daily \
+    = parse_parameters("https://koronawirusunas.pl/u/polska-nowe", get_deaths_recovered_values, 4, 'var populationData = [', 'var startData = ')
 
-text, d, r, r_tested_people, tests, positive = get_tests_values(text[begin:end])
 
-ratios = [r]
-datas = [d]
-tests_array = [tests]
-new_cases = [positive]
+draw_plot(datas_tests, ratios, 'Data', 'Udział wyników pozytywnych [%]', 'Stosunek testów pozytywnych do wszystkich testów')
+draw_plot(datas_tests, tests_array, 'Data', 'Liczba testów', 'Liczba dziennie wykonanych testów')
+draw_plot(datas_tests, new_cases, 'Data', 'Liczba zakażeń', 'Liczba dziennie wykrytych zakażeń')
+draw_plot(datas_deaths, dr_ratios, 'Data', 'Liczba zmarłych / liczba wyleczonych', 'Stosunek liczby zmarłych do wyleczonych - dziennie')
+draw_plot(datas_deaths, deaths_daily, 'Data', 'Liczba zgonów', 'Liczba zgonów - dziennie')
 
-while 'arg' in text:
-    text, d, r, r_tested_people, tests, positive = get_tests_values(text)
-    ratios.append(r)
-    datas.append(d)
-    tests_array.append(tests)
-    new_cases.append(positive)
-
-url_deaths = "https://koronawirusunas.pl/u/polska-nowe"
-response = requests.get(url_deaths, timeout=10000)
-text = response.text.replace('null', '0')
-begin = text.find('var populationData = [') + len('var populationData = [')
-end = text.find('var startData = ')
-text, d, deaths_recovered_ratio, deaths = get_deaths_recovered_values(text[begin:end])
-dr_ratios = [deaths_recovered_ratio]
-death_daily = [deaths]
-datas2 = [d]
-
-while 'arg' in text:
-    text, d, deaths_recovered_ratio, deaths = get_deaths_recovered_values(text)
-    dr_ratios.append(deaths_recovered_ratio)
-    datas2.append(d)
-    death_daily.append(deaths)
-
-draw_plot(datas, ratios, 'Data', 'Udział wyników pozytywnych [%]', 'Stosunek testów pozytywnych do wszystkich testów')
-draw_plot(datas, tests_array, 'Data', 'Liczba testów', 'Liczba dziennie wykonanych testów')
-draw_plot(datas, new_cases, 'Data', 'Liczba zakażeń', 'Liczba dziennie wykrytych zakażeń')
-draw_plot(datas2, dr_ratios, 'Data', 'Liczba zmarłych / liczba wyleczonych',
-          'Stosunek liczby zmarłych do wyleczonych - dziennie')
-draw_plot(datas2, death_daily, 'Data', 'Liczba zgonów',
-          'Liczba zgonów - dziennie')
 print('_________________________________')
-print('Dane z', datas[-1])
+print('Dane z', datas_tests[-1])
 print('Liczba testów:', tests_array[-1])
 print('Liczba zakażeń:', new_cases[-1])
-print('Liczba zgonów:', death_daily[-1])
+print('Liczba zgonów:', deaths_daily[-1])
 print('Stosunek wyników pozytywnych:', ratios[-1])
 print('Stosunek zgonów do wyzdrowień:', dr_ratios[-1])
 
