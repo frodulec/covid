@@ -8,25 +8,27 @@ import matplotlib.ticker as ticker
 
 def get_tests_values(text):
     first_val = text[text.find('arg: "') + len('arg: "'): text.find('},')]
-    data = first_val[0: first_val.find('"')]
-    tests = int(first_val[first_val.find('p_testy: ') + len('p_testy: '): first_val.find('p_testyl') - 1])
-    tested_people = int(first_val[first_val.find('p_testyl: ') + len('p_testyl: '): first_val.find('p_chorzy') - 1])
-    positive = int(first_val[first_val.find('p_chorzy: ') + len('p_chorzy: '): first_val.find('},')])
-    data2 = data.split('.')
-    data = data2[2] + '-' + data2[1] + '-' + data2[0]
+    data_dots = first_val[0: first_val.find('"')]
+    data_arr = data_dots.split('.')
+    data = data_arr[2] + '-' + data_arr[1] + '-' + data_arr[0]
 
-    if tests != 0:
-        ratio = 100 * float(positive) / float(tests)
+    tests_amount = int(first_val[first_val.find('p_testy: ') + len('p_testy: '): first_val.find('p_testyl') - 1])
+    tested_people = int(first_val[first_val.find('p_testyl: ') + len('p_testyl: '): first_val.find('p_chorzy') - 1])
+    positive_results = int(first_val[first_val.find('p_chorzy: ') + len('p_chorzy: '): first_val.find('},')])
+
+    if tests_amount != 0:
+        positive_tests_ratio = 100 * float(positive_results) / float(tests_amount)
     else:
-        ratio = 0
+        positive_tests_ratio = 0
 
     if tested_people != 0:
-        ratio_tested_people = 100 * positive / tested_people
+        positive_ratio_tested_people = 100 * positive_results / tested_people
     else:
-        ratio_tested_people = 0
-    print(data, tests, positive, ratio, ratio_tested_people)
+        positive_ratio_tested_people = 0
+    print(data, tests_amount, positive_results, positive_tests_ratio, positive_ratio_tested_people)
 
-    return text[text.find('},') + len('},'):], np.datetime64(data, 'D'), ratio, ratio_tested_people, tests, positive
+    return text[text.find('},') + len('},'):], np.datetime64(data,
+                                                             'D'), positive_tests_ratio, positive_ratio_tested_people, tests_amount, positive_results
 
 
 def get_deaths_recovered_values(text):
@@ -46,6 +48,32 @@ def get_deaths_recovered_values(text):
     print(data, sick, deaths, recovered, death_recovered_ratio)
 
     return text[text.find('},') + len('},'):], np.datetime64(data, 'D'), death_recovered_ratio, deaths
+
+
+def parse_parameters(url, func, parameters, starting_string, end_string):
+    # url = "https://koronawirusunas.pl/u/polska-testy-nowe"
+    response = requests.get(url, timeout=10000)
+    text = response.text.replace('null', '0')
+    # begin = text.find('var Data_przyrost_testy = [') + len('var Data_przyrost_testy = [')
+    begin = text.find(starting_string + len(starting_string))
+    # end = text.find('var TstartData = ')
+    end = text.find(end_string)
+
+    # text, d, r, r_tested_people, tests, positive = get_tests_values(text[begin:end])
+    ret_data = func(text[begin:end])
+    parameters_arrays = [[]] * len(parameters)
+    for i in range(len(parameters)):
+        parameters_arrays[i].append(ret_data[i])
+    #
+    # ratios = [r]
+    # datas = [d]
+    # tests_array = [tests]
+    # new_cases = [positive]
+
+    while 'arg' in text:
+        ret_data = get_tests_values(text)
+        for i in range(len(parameters)):
+            parameters_arrays[i].append(ret_data[i])
 
 
 def draw_plot(x_vals, y_vals, x_axis_label, y_axis_label, label):
@@ -81,16 +109,12 @@ def moving_average(step, arr):
     averaged = []
     for i, val in enumerate(arr):
         if (i - step) > 0:
-            # print(arr[i-step:i+1])
             subarray_avg = np.mean(arr[i - step:i + 1])
         else:
-            # print(arr[0:i+1])
             subarray_avg = np.mean(arr[0:i + 1])
 
         averaged.append(subarray_avg)
-    # print(averaged)
-    # print(len(averaged))
-    # print(len(tests_array))
+
     return averaged
 
 
@@ -111,8 +135,7 @@ datas = [d]
 tests_array = [tests]
 new_cases = [positive]
 
-
-while len(text) > 10:
+while 'arg' in text:
     text, d, r, r_tested_people, tests, positive = get_tests_values(text)
     ratios.append(r)
     datas.append(d)
@@ -129,7 +152,7 @@ dr_ratios = [deaths_recovered_ratio]
 death_daily = [deaths]
 datas2 = [d]
 
-while len(text) > 10:
+while 'arg' in text:
     text, d, deaths_recovered_ratio, deaths = get_deaths_recovered_values(text)
     dr_ratios.append(deaths_recovered_ratio)
     datas2.append(d)
