@@ -113,10 +113,6 @@ def moving_average(step, arr):
     return averaged
 
 
-years = mdates.YearLocator()  # every year
-months = mdates.MonthLocator()  # every month
-months_fmt = mdates.DateFormatter('%M')
-
 skip, datas_tests, ratios, ratios_tested_people, tests_array, new_cases \
     = parse_parameters("https://koronawirusunas.pl/u/polska-testy-nowe", get_tests_values, 6, 'var Data_przyrost_testy = [', 'var TstartData = ')
 skip, datas_deaths, dr_ratios, deaths_daily \
