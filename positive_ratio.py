@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import matplotlib.dates as dates
 import matplotlib.ticker as ticker
+import pickle
 
 
 def get_tests_values(text):
@@ -56,6 +57,8 @@ def parse_parameters(url, func, parameters_count, starting_string, end_string):
         parameters_array.append([])
 
     response = requests.get(url, timeout=10000)
+    saved_response_file = open((url+'_saved').replace('/', '').replace(':', ''), 'wb')
+    pickle.dump(response, saved_response_file)
     text = response.text.replace('null', '0')
     begin = text.find(starting_string) + len(starting_string)
     end = text.find(end_string)
@@ -78,7 +81,7 @@ def draw_plot(x_vals, y_vals, x_axis_label, y_axis_label, label):
     ax.set_ylabel(y_axis_label)
 
     ax.scatter(x_vals, y_vals, color='blue', s=4, label='Surowe dane')
-    ax.plot(x_vals, moving_average(5, y_vals), color='red', alpha=1, label='Średnia z 5 dni')
+    ax.plot(x_vals, moving_average(7, y_vals), color='red', alpha=1, label='Średnia z 5 dni')
     plt.axvline(x=np.datetime64('2020-11-04', 'D'), label='Konferencja ws lockdownu', c='black', linestyle=':')
     plt.axvline(x=np.datetime64('2020-07-01', 'D'), label='Koronawirus "w odwrocie"', c='orange', linestyle=':')
     plt.legend(bbox_to_anchor=(0., -0.4, 1., 0.), loc='lower left')
