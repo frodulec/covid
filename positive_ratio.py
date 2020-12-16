@@ -5,6 +5,8 @@ import matplotlib.dates as mdates
 import matplotlib.dates as dates
 import matplotlib.ticker as ticker
 import pickle
+import pyttsx3
+
 
 
 def get_tests_values(text):
@@ -116,6 +118,8 @@ def moving_average(step, arr):
     return averaged
 
 
+engine = pyttsx3.init()
+
 skip, datas_tests, ratios, ratios_tested_people, tests_array, new_cases \
     = parse_parameters("https://koronawirusunas.pl/u/polska-testy-nowe", get_tests_values, 6, 'var Data_przyrost_testy = [', 'var TstartData = ')
 skip, datas_deaths, dr_ratios, deaths_daily \
@@ -131,9 +135,14 @@ draw_plot(datas_deaths, deaths_daily, 'Data', 'Liczba zgonów', 'Liczba zgonów 
 print('_________________________________')
 print('Dane z', datas_tests[-1])
 print('Liczba testów:', tests_array[-1])
+engine.say("Liczba testów" + str(tests_array[-1]))
 print('Liczba zakażeń:', new_cases[-1])
+engine.say("Liczba zakażeń" + str(new_cases[-1]))
 print('Liczba zgonów:', deaths_daily[-1])
+engine.say("Liczba zgonów" + str(deaths_daily[-1]))
 print('Stosunek wyników pozytywnych:', ratios[-1])
+engine.say("Stosunek wyników pozytywnych:" + str(round(ratios[-1], 1)) + 'procent')
 print('Stosunek zgonów do wyzdrowień:', dr_ratios[-1])
-
+engine.say("Stosunek zgonów do wyzdrowień:" + str(round(dr_ratios[-1], 1)) + 'procent')
+engine.runAndWait()
 plt.show()
