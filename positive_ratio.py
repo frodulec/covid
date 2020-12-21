@@ -6,7 +6,7 @@ import matplotlib.dates as dates
 import matplotlib.ticker as ticker
 import pickle
 import pyttsx3
-
+# from playsound import playsound
 
 
 def get_tests_values(text):
@@ -119,6 +119,7 @@ def moving_average(step, arr):
 
 
 engine = pyttsx3.init()
+engine.setProperty('age', 70)
 
 skip, datas_tests, ratios, ratios_tested_people, tests_array, new_cases \
     = parse_parameters("https://koronawirusunas.pl/u/polska-testy-nowe", get_tests_values, 6, 'var Data_przyrost_testy = [', 'var TstartData = ')
@@ -133,16 +134,20 @@ draw_plot(datas_deaths, dr_ratios, 'Data', 'Liczba zmarłych / liczba wyleczonyc
 draw_plot(datas_deaths, deaths_daily, 'Data', 'Liczba zgonów', 'Liczba zgonów - dziennie')
 
 print('_________________________________')
+
 print('Dane z', datas_tests[-1])
 print('Liczba testów:', tests_array[-1])
-engine.say("Liczba testów" + str(tests_array[-1]))
 print('Liczba zakażeń:', new_cases[-1])
-engine.say("Liczba zakażeń" + str(new_cases[-1]))
 print('Liczba zgonów:', deaths_daily[-1])
-engine.say("Liczba zgonów" + str(deaths_daily[-1]))
 print('Stosunek wyników pozytywnych:', ratios[-1])
-engine.say("Stosunek wyników pozytywnych:" + str(round(ratios[-1], 1)) + 'procent')
 print('Stosunek zgonów do wyzdrowień:', dr_ratios[-1])
+engine.say('Dane z' + str(datas_tests[-1]))
+engine.say("Liczba testów" + str(tests_array[-1]))
+engine.say("Liczba zakażeń" + str(new_cases[-1]))
+engine.say("Liczba zgonów" + str(deaths_daily[-1]))
+engine.say("Stosunek wyników pozytywnych:" + str(round(ratios[-1], 1)) + 'procent')
 engine.say("Stosunek zgonów do wyzdrowień:" + str(round(dr_ratios[-1], 1)) + 'procent')
-engine.runAndWait()
+plt.ion()
+plt.pause(0.001)
 plt.show()
+engine.runAndWait()
