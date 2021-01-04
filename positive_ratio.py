@@ -9,6 +9,11 @@ import pyttsx3
 # from playsound import playsound
 
 
+def number(in_number):
+    print(format(in_number, ',g').replace(',', '*').replace('.', ',').replace('*', '.'))
+    return format(in_number, ',g').replace(',', '*').replace('.', ',').replace('*', '.')
+
+
 def get_tests_values(text):
     first_val = text[text.find('arg: "') + len('arg: "'): text.find('},')]
     data_dots = first_val[0: first_val.find('"')]
@@ -134,7 +139,7 @@ draw_plot(datas_deaths, dr_ratios, 'Data', 'Liczba zmarłych / liczba wyleczonyc
 draw_plot(datas_deaths, deaths_daily, 'Data', 'Liczba zgonów', 'Liczba zgonów - dziennie')
 
 print('_________________________________')
-
+engine.say('29.618')
 print('Dane z', datas_tests[-1])
 print('Liczba testów:', tests_array[-1])
 print('Liczba zakażeń:', new_cases[-1])
@@ -142,11 +147,11 @@ print('Liczba zgonów:', deaths_daily[-1])
 print('Stosunek wyników pozytywnych:', ratios[-1])
 print('Stosunek zgonów do wyzdrowień:', dr_ratios[-1])
 engine.say('Dane z' + str(datas_tests[-1]))
-engine.say("Liczba testów" + str(tests_array[-1]))
-engine.say("Liczba zakażeń" + str(new_cases[-1]))
-engine.say("Liczba zgonów" + str(deaths_daily[-1]))
-engine.say("Stosunek wyników pozytywnych:" + str(round(ratios[-1], 1)) + 'procent')
-engine.say("Stosunek zgonów do wyzdrowień:" + str(round(dr_ratios[-1], 1)) + 'procent')
+engine.say("Liczba testów " + number(tests_array[-1]))
+engine.say("Liczba zakażeń " + number(new_cases[-1]))
+engine.say("Liczba zgonów " + number(deaths_daily[-1]))
+engine.say("Stosunek wyników pozytywnych: " + number(round(ratios[-1], 1)) + 'procent')
+engine.say("Stosunek zgonów do wyzdrowień: " + number(round(dr_ratios[-1], 1)) + 'procent')
 plt.ion()
 plt.pause(0.001)
 plt.show()
